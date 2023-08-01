@@ -4,6 +4,8 @@ const api_proxy = null;
 
 var requests_count = 0;
 
+var $ = (e) => document.querySelector(e);
+
 var api = async (url, params) => {
 	var ignore_errors = true;
 	var params_str = '';
@@ -71,7 +73,7 @@ var reqBlob = async (url) => {
 };
 
 function tpl(id, vars) {
-	var out = document.getElementById(id).innerHTML;
+	var out = $('#' + id).innerHTML;
 
 	Object.entries(vars).forEach((e) => {
 		var r = new RegExp('#' + e[0] + '#', 'g');
@@ -92,7 +94,7 @@ const arrayReverseObj =
 
 var zip = new JSZip();
 
-async function archive(username)
+async function archive(username, options)
 {
 	try {
 		var blog = await api('v2/blog/get', {username});
@@ -114,14 +116,13 @@ async function archive(username)
 
 	var last_page = Math.ceil(blog.nb_posts / 10);
 	var all_requests_count = 1 + last_page * 2 + blog.nb_posts;
-	var options = {bbcode: true, images: true, comments: true};
 
-	if (all_requests_count > 450) {
+	if (all_requests_count > 450 && options.bbcode) {
 		options.bbcode = false;
 		all_requests_count -= last_page;
 	}
 
-	if (all_requests_count > 475) {
+	if (all_requests_count > 475 && (options.images || options.comments)) {
 		if (!confirm("Ce blog a trop d'articles, il ne sera pas possible de télécharger les images et commentaires.\nTélécharger le blog sans les images ni les commentaires ?")) {
 			return;
 		}
@@ -185,10 +186,10 @@ async function archive(username)
 
 	zip.file('json/blog.json', JSON.stringify(blog, null, "\t"));
 
-	document.getElementById('progress').style.display = 'block';
-	document.querySelector('form').style.display = 'none';
-	document.getElementById('posts').max = blog.nb_posts;
-	document.getElementById('posts').value = 0;
+	$('#progress').style.display = 'block';
+	$('form').style.display = 'none';
+	$('#posts').max = blog.nb_posts;
+	$('#posts').value = 0;
 
 	if (blog.avatar_url) {
 		images['avatar.png'] = blog.avatar_url;
@@ -325,11 +326,11 @@ async function archive(username)
 
 			posts.push(post);
 			zip.file('json/post_' + id_post + '.json', JSON.stringify(post, null, "\t"));
-			document.getElementById('posts').value++;
+			$('#posts').value++;
 		}
 	}
 
-	document.getElementById('images').max = Object.keys(images).length;
+	$('#images').max = Object.keys(images).length;
 
 	html += `
 			</div>
@@ -341,7 +342,7 @@ async function archive(username)
 	zip.file('index.html', html);
 
 	for (var path in images) {
-		document.getElementById('images').value++;
+		$('#images').value++;
 		console.log('Zipping', path, 'from', images[path]);
 
 		try {
@@ -371,22 +372,27 @@ async function archive(username)
 		alert(err);
 	});
 
-	document.getElementById('progress').style.display = 'none';
-	document.getElementById('finished').style.display = 'block';
+	$('#progress').style.display = 'none';
+	$('#finished').style.display = 'block';
 }
 
 window.onload = () => {
-	document.querySelector('form').onsubmit = () => {
-		var username = document.getElementById('f_username').value.replace(/\s+/, '');
+	$('form').onsubmit = () => {
+		var username = $('#f_username').value.replace(/\s+/, '');
 
 		if (!username) {
 			alert('Pseudo vide !');
 			return;
 		}
 
-		archive(username);
+		archive(username, {
+			'images': $('#f_images').checked,
+			'bbcode': $('#f_bbcode').checked,
+			'comments': $('#f_comments').checked
+		});
+
 		return false;
 	};
 
-	document.getElementById('f_username').focus();
+	$('#f_username').focus();
 };

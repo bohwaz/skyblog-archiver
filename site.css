@@ -122,3 +122,16 @@ p.help strong {
 	font-size: 1rem;
 	color: #333;
 }
+
+.check {
+	display: flex;
+}
+
+.check label {
+	display: block;
+	padding: .5rem;
+	background: #eee;
+	margin: .2rem;
+	border-radius: .5em;
+	cursor: pointer;
+}

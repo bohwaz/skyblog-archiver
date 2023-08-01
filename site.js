@@ -1,5 +1,5 @@
 //const image_proxy = '/';
-const image_proxy = 'http://skyproxy.bohwaz.net/';
+const image_proxy = 'https://skyproxy.bohwaz.net/';
 const api_proxy = null;
 
 var requests_count = 0;

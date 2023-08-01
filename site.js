@@ -1,3 +1,5 @@
+const image_proxy = 'http://skyproxy.bohwaz.net/';
+
 var api = async (url, params) => {
 	var params_str = '';
 
@@ -25,11 +27,12 @@ var req = async (url) => {
 };
 
 var reqBlob = async (url) => {
-	throw Error('Nope, no proxy');
+	if (image_proxy) {
+		// FIXME: i.skyrock.net/wir.skyrock.net don't have CORS to allow everyone to request,
+		// so we need to use a local proxy
+		url = url.replace(/https:\/\//, image_proxy);
+	}
 
-	// FIXME: i.skyrock.net/wir.skyrock.net don't have CORS to allow everyone to request,
-	// so we need to use a local proxy
-	url = url.replace(/https:\/\//, '/');
 	var r = await fetch(url);
 
 	if (!r.ok) {

@@ -1,7 +1,16 @@
+//const image_proxy = '/';
 const image_proxy = 'http://skyproxy.bohwaz.net/';
+const api_proxy = null;
+
+var requests_count = 0;
 
 var api = async (url, params) => {
 	var params_str = '';
+
+	if (requests_count++) {
+		// Add some delay between requests
+		await new Promise(r => setTimeout(r, 250));
+	}
 
 	if (typeof params == 'object' && params !== null) {
 		Object.entries(params).forEach((e) => {
@@ -10,8 +19,13 @@ var api = async (url, params) => {
 	}
 
 	url = 'https://api.skyrock.com/' + url + '.json?' + params_str;
+
+	if (api_proxy) {
+		url = url.replace(/https:\/\//, api_proxy);
+	}
+
 	console.log('Requesting', url);
-	var r = await fetch(url);
+	var r = await fetch(url, {headers: {'User-Agent': navigator.userAgent + ' bohwaz'}});
 	var j = await r.json();
 
 	if (!r.ok) {
@@ -22,7 +36,11 @@ var api = async (url, params) => {
 };
 
 var req = async (url) => {
-	var r = await fetch(url);
+	if (api_proxy) {
+		url = url.replace(/https:\/\//, api_proxy);
+	}
+
+	var r = await fetch(url, {headers: {'User-Agent': navigator.userAgent + ' bohwaz'}});
 	return await r.text();
 };
 
@@ -33,7 +51,7 @@ var reqBlob = async (url) => {
 		url = url.replace(/https:\/\//, image_proxy);
 	}
 
-	var r = await fetch(url);
+	var r = await fetch(url, {headers: {'User-Agent': navigator.userAgent + ' bohwaz'}});
 
 	if (!r.ok) {
 		throw Error(r.statusText);
@@ -174,6 +192,20 @@ async function archive(username)
 			post.comments = [];
 			post.image = null;
 
+			var align = post.media_align.match(/left|right|center/)[0] ?? 'center';
+			var images_in_text = false;
+
+			// Multiple images
+			var text = post.text.replace(/<a href="https.*?id_article_media=(\d+)"[^>]*?>.*?<img[^>]*?class="([^"]+?)"[^>]*?>.*?<\/a>/g,
+				(m, id_media, css_class) => {
+				var ext = m.match(/\.(jpe?g|png|gif)/)[1];
+				var w = m.match(/;w=(\d+)/)[1] || 600;
+				var h = m.match(/;h=(\d+)/)[1] || 800;
+				var name = id_post + '_' + id_media + '.' + ext;
+				images_in_text = true;
+				return `<img src="images/${name}" class="${css_class}" alt="" style="object-fit: cover; width: ${w}px; height: ${h}px;" />`;
+			});
+
 			Object.values(post.medias).forEach((media) => {
 				if (media.media_type != 'image') {
 					console.log('Dismiss media', media);
@@ -182,20 +214,22 @@ async function archive(username)
 
 				var url = media.media_url.replace(/_small/, '');
 				var ext = media.media_url.match(/\.(jpe?g|png|gif)/)[1] ?? 'img';
-				images[id_post + '.' + ext] = url;
-				post.image = id_post + '.' + ext;
+				var name = id_post + '_' + media.id_media + '.' + ext;
+				images[name] = url;
+				post.image = name;
 			});
 
 			var thumb = '';
-			var align = post.media_align.match(/left|right|center/)[0] ?? 'center';
 
-			if (post.image && post.media_align) {
-				// Image
-				thumb = '<div class="image-container ' + align + '"><img src="images/' + post.image + '" alt="" style="max-width: 600px; max-height: 800px;" /></div>';
-			}
-			else if (post.medias.length > 0) {
-				// Videos, etc.
-				thumb = '<div class="image-container ' + align + '">' + post.medias[0].media_html + '</div>';
+			if (!images_in_text) {
+				if (post.image && post.medias.length == 1 && post.medias[0].media_type == 'image') {
+					// Image
+					thumb = '<div class="image-container ' + align + '"><img src="images/' + post.image + '" alt="" style="max-width: 600px; max-height: 800px;" /></div>';
+				}
+				else if (post.medias.length > 0) {
+					// Videos, etc.
+					thumb = '<div class="image-container ' + align + '">' + post.medias[0].media_html + '</div>';
+				}
 			}
 
 			var comments = '';
@@ -246,8 +280,9 @@ async function archive(username)
 			}
 
 			html += tpl('post', {
+				'id_post': id_post,
 				'title': post.title,
-				'text': post.text,
+				'text': text,
 				'class': post.medias.length == 0 ? 'isText' : 'hasimage',
 				'thumbnail': thumb,
 				'created_at': date_format(post.created_at),
@@ -319,4 +354,6 @@ window.onload = () => {
 		archive(username);
 		return false;
 	};
+
+	document.getElementById('f_username').focus();
 };

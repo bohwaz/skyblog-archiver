@@ -11,6 +11,14 @@ body {
 	gap: 1em;
 	justify-content: center;
 	align-items: center;
+	text-align: center;
+}
+
+h1, h3 {
+	background: #ddf;
+	border-radius: .5em;
+	padding: .5em;
+	margin: 2rem 0;
 }
 
 fieldset {
@@ -22,11 +30,21 @@ fieldset {
 
 legend {
 	padding: 1rem;
-	font-size: 2em;
+	font-size: 1.2em;
 }
 
-input {
+input, button {
+	border-radius: .5em;
+	border: none;
+	box-shadow: 0px 0px 5px #666;
 	padding: .5rem;
+	font-size: 1.2em;
+	transition: box-shadow .2s;
+}
+
+input:focus, button:focus {
+	outline: none;
+	box-shadow: 0px 0px 5px 2px orange;
 }
 
 dl dt {
@@ -45,9 +63,25 @@ dl {
 	display: none;
 }
 
-input[type=submit] {
+button {
 	font-size: 1.3em;
 	cursor: pointer;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	background: #ffc;
+}
+
+button:hover {
+	color: darkred;
+	background: #fee;
+	text-decoration: underline;
+	box-shadow: 0px 0px 5px 2px orange;
+}
+
+button svg {
+	width: 64px;
+	margin-top: .5rem;
 }
 
 progress[value] {
@@ -75,4 +109,16 @@ progress[value]::-webkit-progress-value {
 	linear-gradient(135deg, transparent, transparent 33%, rgba(0,0,0,.1) 33%, rgba(0,0,0,.1) 66%, transparent 66%),
 	linear-gradient(to top, rgba(255, 255, 255, .25), rgba(0,0,0,.2)),
 	linear-gradient(to right, #0c9, #f44);
+}
+
+p.help {
+	color: #666;
+	font-size: .8em;
+	margin: 2em auto;
+	max-width: 25em;
+}
+
+p.help strong {
+	font-size: 1rem;
+	color: #333;
 }

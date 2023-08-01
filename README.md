@@ -8,7 +8,7 @@ Les données suivantes sont archivées :
 * images des articles
 * image de l'avatar
 * commentaires
-* résultat de l'API en JSON, incluant tous les médias, commentaires, et le contenu des posts en BBCode
+* résultat de l'API en JSON, incluant tous les médias, commentaires, et le contenu des posts en BBCode.
 
 Un fichier ZIP est généré dans le navigateur.
 

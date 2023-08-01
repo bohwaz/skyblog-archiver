@@ -5,6 +5,7 @@ const api_proxy = null;
 var requests_count = 0;
 
 var api = async (url, params) => {
+	var ignore_errors = true;
 	var params_str = '';
 
 	if (requests_count++) {
@@ -26,10 +27,19 @@ var api = async (url, params) => {
 
 	console.log('Requesting', url);
 	var r = await fetch(url);
+
+	if (r.status == 429 || r.status == 403) {
+		if (ignore_errors) {
+			return null;
+		}
+
+		throw 429;
+	}
+
 	var j = await r.json();
 
 	if (!r.ok) {
-		throw Error(j.error ? j.error : url + ': ' + r.statusText + "\n" + JSON.stringify(j, null, "\t"));
+		throw j.error ? j.error : url + ': ' + r.statusText + "\n" + JSON.stringify(j, null, "\t");
 	}
 
 	return j;
@@ -54,7 +64,7 @@ var reqBlob = async (url) => {
 	var r = await fetch(url);
 
 	if (!r.ok) {
-		throw Error(r.statusText);
+		throw r.statusText;
 	}
 
 	return await r.blob();
@@ -71,20 +81,6 @@ function tpl(id, vars) {
 	return out;
 }
 
-const imageUrlToBase64 = async url => {
-	const response = await fetch(url);
-	const blob = await response.blob();
-	return new Promise((onSuccess, onError) => {
-		try {
-			const reader = new FileReader() ;
-			reader.onload = function(){ onSuccess(this.result) } ;
-			reader.readAsDataURL(blob) ;
-		} catch(e) {
-			onError(e);
-		}
-	});
-};
-
 function date_format(ts)
 {
 	var d = new Date(ts*1000);
@@ -100,14 +96,38 @@ async function archive(username)
 {
 	try {
 		var blog = await api('v2/blog/get', {username});
+
+		if (null === blog) {
+			alert("Vous avez dépassé les limites de requêtes de l'API Skyrock.com, merci d'attendre une heure avant de recommencer.");
+			return;
+		}
 	}
 	catch (e) {
 		alert('Blog introuvable' + "\n" + e);
+		return;
 	}
 
 	if (!blog.nb_posts) {
 		alert('Ce blog n\'a aucun article.');
 		return;
+	}
+
+	var last_page = Math.ceil(blog.nb_posts / 10);
+	var all_requests_count = 1 + last_page * 2 + blog.nb_posts;
+	var options = {bbcode: true, images: true, comments: true};
+
+	if (all_requests_count > 450) {
+		options.bbcode = false;
+		all_requests_count -= last_page;
+	}
+
+	if (all_requests_count > 475) {
+		if (!confirm("Ce blog a trop d'articles, il ne sera pas possible de télécharger les images et commentaires.\nTélécharger le blog sans les images ni les commentaires ?")) {
+			return;
+		}
+
+		options.images = false;
+		options.comments = false;
 	}
 
 	var images = [];
@@ -174,11 +194,15 @@ async function archive(username)
 		images['avatar.png'] = blog.avatar_url;
 	}
 
-	var last_page = Math.ceil(blog.nb_posts / 10);
-
 	for (var p = 1; p <= last_page; p++) {
 		var posts_html = await api('v2/blog/list_posts', {username, 'page': p});
-		var posts_bbcode = await api('v2/blog/list_posts', {username, 'page': p, 'output_format': 'bbcode'});
+
+		if (posts_html === null) {
+			alert('Vous avez dépassé le nombre de requêtes autorisées. Le blog sera incomplet.');
+			break;
+		}
+
+		var posts_bbcode = options.bbcode ? await api('v2/blog/list_posts', {username, 'page': p, 'output_format': 'bbcode'}): null;
 
 		// Reverse order
 		posts_html = arrayReverseObj(posts_html.posts);
@@ -186,11 +210,15 @@ async function archive(username)
 		for (var k in posts_html) {
 			var post = posts_html[k];
 			var id_post = post.id_post;
-			post.text_bbcode = posts_bbcode.posts[id_post].text;
-			post.title_bbcode = posts_bbcode.posts[id_post].title;
-			post.medias = await api('v2/blog/list_post_medias', {username, 'id_post': id_post});
+			post.text_bbcode = options.bbcode && id_post in posts_bbcode.posts ? posts_bbcode.posts[id_post].text : null;
+			post.title_bbcode = options.bbcode && id_post in posts_bbcode.posts ? posts_bbcode.posts[id_post].title : null;
+			post.medias = [];
 			post.comments = [];
 			post.image = null;
+
+			if (options.images) {
+				post.medias = await api('v2/blog/list_post_medias', {username, 'id_post': id_post}) || [];
+			}
 
 			var align = post.media_align.match(/left|right|center/)[0] ?? 'center';
 			var images_in_text = false;
@@ -198,11 +226,17 @@ async function archive(username)
 			// Multiple images
 			var text = post.text.replace(/<a href="https.*?id_article_media=(\d+)"[^>]*?>.*?<img[^>]*?class="([^"]+?)"[^>]*?>.*?<\/a>/g,
 				(m, id_media, css_class) => {
+
+				if (!options.images) {
+					return '';
+				}
+
 				var ext = m.match(/\.(jpe?g|png|gif)/)[1];
 				var w = (a = m.match(/;w=(\d+)/)) ? a[1] : 600;
 				var h = (a = m.match(/;h=(\d+)/)) ? a[1] : 800;
 				var name = id_post + '_' + id_media + '.' + ext;
 				images_in_text = true;
+
 				return `<img src="images/${name}" class="${css_class}" alt="" style="object-fit: cover; width: ${w}px; height: ${h}px;" />`;
 			});
 
@@ -221,7 +255,7 @@ async function archive(username)
 
 			var thumb = '';
 
-			if (!images_in_text) {
+			if (!images_in_text && post.medias.length > 0) {
 				if (post.image && post.medias.length == 1 && post.medias[0].media_type == 'image') {
 					// Image
 					thumb = '<div class="image-container ' + align + '"><img src="images/' + post.image + '" alt="" style="max-width: 600px; max-height: 800px;" /></div>';
@@ -234,7 +268,7 @@ async function archive(username)
 
 			var comments = '';
 
-			if (post.nb_comments && blog.comments_enabled) {
+			if (options.comments && post.nb_comments && blog.comments_enabled) {
 				var last_comment_page = 1;
 
 				comments += `
@@ -248,10 +282,9 @@ async function archive(username)
 							<div>`;
 
 				for (var cp = 1; cp <= last_comment_page; cp++) {
-					try {
-						var post_comments = await api('v2/blog/list_post_comments', {username, 'id_post': id_post, 'page': cp});
-					}
-					catch (e) {
+					var post_comments = await api('v2/blog/list_post_comments', {username, 'id_post': id_post, 'page': cp});
+
+					if (null === post_comments) {
 						break;
 					}
 

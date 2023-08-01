@@ -1,0 +1,78 @@
+* {
+	margin: 0;
+	padding: 0;
+}
+
+body {
+	font-family: Verdana, sans-serif;
+	padding: 1em;
+	display: flex;
+	flex-direction: column;
+	gap: 1em;
+	justify-content: center;
+	align-items: center;
+}
+
+fieldset {
+	border: 1px solid #999;
+	border-radius: .5em;
+	padding: 1em;
+	text-align: center;
+}
+
+legend {
+	padding: 1rem;
+	font-size: 2em;
+}
+
+input {
+	padding: .5rem;
+}
+
+dl dt {
+	font-weight: bold;
+}
+
+dl {
+	display: flex;
+	flex-direction: column;
+	gap: 1em;
+	justify-content: center;
+	align-items: center;
+}
+
+#progress {
+	display: none;
+}
+
+input[type=submit] {
+	font-size: 1.3em;
+	cursor: pointer;
+}
+
+progress[value] {
+	appearance: none;
+	border: none;
+	width: 30em;
+	height: 20px;
+	background-color: #ddd;
+	border-radius: 3px;
+	box-shadow: 0 2px 3px rgba(0,0,0,.5) inset;
+	position: relative;
+}
+
+progress[value]::-webkit-progress-bar {
+	background-color: #ddd;
+	border-radius: 3px;
+	box-shadow: 0 2px 3px rgba(0,0,0,.5) inset;
+}
+
+progress[value]::-webkit-progress-value {
+	position: relative;
+	background-size: 35px 20px, 100% 100%, 100% 100%;
+	border-radius:3px;
+	background-image:
+	linear-gradient(135deg, transparent, transparent 33%, rgba(0,0,0,.1) 33%, rgba(0,0,0,.1) 66%, transparent 66%),
+	linear-gradient(to top, rgba(255, 255, 255, .25), rgba(0,0,0,.2)),
+	linear-gradient(to right, #0c9, #f44);
+}

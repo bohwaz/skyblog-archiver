@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<script type="text/javascript" src="jszip.js"></script>
+	<script type="text/javascript" src="site.js"></script>
+	<link rel="stylesheet" type="text/css" href="site.css" />
+	<title>Télécharge ton Skyblog</title>
+</head>
+
+<body>
+<div id="progress">
+	<dl>
+		<dt>Articles</dt>
+		<dd><progress id="posts" value=0></progress></dd>
+		<dt>Images</dt>
+		<dd><progress id="images" value=0></progress></dd>
+	</dl>
+</div>
+
+<form method="post" action="">
+	<h1>Télécharge ton Skyblog !</h1>
+	<fieldset>
+		<legend>
+			Entre ton pseudo Skyblog
+		</legend>
+		<dl>
+			<dt><label for="f_username">Pseudo</label></dt>
+			<dd><input type="text" name="username" id="f_username" placeholder="devteam" /></dd>
+			<dt>
+				<input type="submit" value="Archiver mon blog &rarr;" />
+			</dt>
+		</dl>
+	</fieldset>
+</form>
+
+</body>
+</html>

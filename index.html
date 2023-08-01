@@ -18,6 +18,12 @@
 	</dl>
 </div>
 
+
+<div id="finished" style="display: none">
+	<h1>Téléchargement terminé !</h1>
+	<p><a href="./">Recommencer</a></p>
+</div>
+
 <form method="post" action="">
 	<h1>Télécharge ton Skyblog !</h1>
 	<fieldset>
@@ -33,6 +39,103 @@
 		</dl>
 	</fieldset>
 </form>
+
+<template id="sidebar_right">
+	<div id="bloginfo" class="sidebar-info-bloc">
+		<h3><span>Infos</span></h3>
+		<ul>
+			<li>Création : <em>#date_created#</em></li>
+			<li>Mise à jour : <em>#date_updated#</em></li>
+			<li><em>#nb_posts#</em> articles</li>
+			<li><em>#nb_comments#</em> commentaires</li>
+			<li><em>#nb_friends#</em> amis</li>
+			<li><em>#nb_visits#</em> visites</li>
+		</ul>
+	</div>
+	<!--
+	<div id="fans" class="sidebar-info-bloc thumbnails">
+		<h3>
+			<a href="">
+				<span>Ses amis</span>
+				<span class="nb">#nb_friends#</span>
+				<span class="pointe_border"></span>
+			</a>
+		</h3>
+		<ul class="liste-amis clearfix">
+			#friends#
+		</ul>
+	</div>
+	-->
+</template>
+
+<template id="sidebar_left">
+   <h1 class="blogtitle" itemprop="name">
+		#title#
+	</h1>
+
+	<div class="mini-profil">
+		<div class="mini-profil-avatar">
+			<img class="avatar" src="images/avatar.png" />
+			<p class="infos">
+				<a class="" href="#">
+					#username#
+				</a>
+			</p>
+		</div>
+	</div>
+	<h4>Description :</h4>
+	<p class="description" itemprop="description">
+		#description#
+	</p>
+</template>
+
+<template id="comment">
+	<div class="comment-item identified">
+		<div class="clearfix">
+			<p class="comment_info">
+				<strong>#username#</strong>,
+				<strong>Posté le </strong> #date#
+			</p>
+			<p>#comment#</p>
+		</div>
+	</div>
+	<hr>
+</template>
+
+<template id="post">
+	<div id="articles_container" class="clearfix">
+		<div id="#id_post#" class="bloc article_item #class#">
+			<div class="frontadmin-blog-article-wrapper">
+				<h2 class="bloc_title">
+					<a class="plink" href="##id_post#" itemprop="name">#title#</a>
+				</h2>
+			</div>
+			<div class="post clearfix">
+				#thumbnail#
+				<div class="text-image-container">
+					#text#
+				</div>
+			</div>
+			<div class="article_bottom">
+				<div class="date">
+					<p class="created_on">
+						<span>
+							<time itemprop="dateCreated">
+								Posté le #created_at#
+							</time>
+						</span>
+					</p>
+					<p class="modified_on">
+						<time itemprop="dateModified">
+							Modifié le #updated_at#
+						</time>
+					</p>
+				</div>
+			</div>
+			#comments#
+		</div>
+	</div>
+</template>
 
 </body>
 </html>

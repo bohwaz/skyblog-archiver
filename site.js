@@ -25,7 +25,7 @@ var api = async (url, params) => {
 	}
 
 	console.log('Requesting', url);
-	var r = await fetch(url, {headers: {'User-Agent': navigator.userAgent + ' bohwaz'}});
+	var r = await fetch(url);
 	var j = await r.json();
 
 	if (!r.ok) {
@@ -40,7 +40,7 @@ var req = async (url) => {
 		url = url.replace(/https:\/\//, api_proxy);
 	}
 
-	var r = await fetch(url, {headers: {'User-Agent': navigator.userAgent + ' bohwaz'}});
+	var r = await fetch(url);
 	return await r.text();
 };
 
@@ -51,7 +51,7 @@ var reqBlob = async (url) => {
 		url = url.replace(/https:\/\//, image_proxy);
 	}
 
-	var r = await fetch(url, {headers: {'User-Agent': navigator.userAgent + ' bohwaz'}});
+	var r = await fetch(url);
 
 	if (!r.ok) {
 		throw Error(r.statusText);
@@ -199,8 +199,8 @@ async function archive(username)
 			var text = post.text.replace(/<a href="https.*?id_article_media=(\d+)"[^>]*?>.*?<img[^>]*?class="([^"]+?)"[^>]*?>.*?<\/a>/g,
 				(m, id_media, css_class) => {
 				var ext = m.match(/\.(jpe?g|png|gif)/)[1];
-				var w = m.match(/;w=(\d+)/)[1] || 600;
-				var h = m.match(/;h=(\d+)/)[1] || 800;
+				var w = (a = m.match(/;w=(\d+)/)) ? a[1] : 600;
+				var h = (a = m.match(/;h=(\d+)/)) ? a[1] : 800;
 				var name = id_post + '_' + id_media + '.' + ext;
 				images_in_text = true;
 				return `<img src="images/${name}" class="${css_class}" alt="" style="object-fit: cover; width: ${w}px; height: ${h}px;" />`;

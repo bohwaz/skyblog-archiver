@@ -12,3 +12,7 @@ Les données suivantes sont archivées :
 
 Un fichier ZIP est généré dans le navigateur.
 
+## Limitations de l'API
+
+* Il faut faire 2 requêtes pour avoir à la fois le contenu en HTML et en BBCode :-(
+* Il faut faire une requête pour chaque post pour savoir s'il a des médias ou non, ça aurait été mieux d'avoir les médias joints à l'article dans la requête `list_posts`

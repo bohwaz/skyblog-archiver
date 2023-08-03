@@ -12,6 +12,8 @@ body {
 	justify-content: center;
 	align-items: center;
 	text-align: center;
+	max-width: 50em;
+	margin: 0 auto;
 }
 
 h1, h3 {
@@ -70,6 +72,7 @@ button {
 	flex-direction: column;
 	align-items: center;
 	background: #ffc;
+	color: #000;
 }
 
 button:hover {
@@ -134,4 +137,38 @@ p.help strong {
 	margin: .2rem;
 	border-radius: .5em;
 	cursor: pointer;
+}
+
+#log {
+	overflow: auto;
+	color: #666;
+	font-size: .8em;
+	max-height: 15em;
+	background: #eee;
+	padding: .5em;
+	text-align: left;
+}
+
+#log table {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+details {
+	margin: 2em 0;
+}
+
+#log table td {
+	padding: .1em .3em;
+}
+
+#msg {
+	margin: 1em 0;
+	color: darkred;
+	font-size: 1.2em;
+	background: #fee;
+	padding: .5rem;
+	border: 2px solid darkred;
+	border-radius: .5em;
+	display: none;
 }

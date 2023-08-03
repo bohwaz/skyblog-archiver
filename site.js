@@ -1,18 +1,73 @@
 //const image_proxy = '/';
 const image_proxy = 'https://skyproxy.bohwaz.net/';
 const api_proxy = null;
+var request_delay = 250;
+var requests_left = 500;
 
 var requests_count = 0;
 
 var $ = (e) => document.querySelector(e);
 
-var api = async (url, params) => {
+function log(url, status)
+{
+	var l = $('#log');
+	if (status === true) {
+		status = '<b style="color:darkgreen">OK</b>';
+	}
+	else if (status === false) {
+		status = '<b style="color:red">FAIL</b>';
+	}
+	else {
+		status = '<b style="color:darkred">' + status + '</b>';
+	}
+
+	$('#log table').innerHTML += '<tr><td>' + url + '</td><td>' + status + '</td></tr>';
+	l.scrollTo(0, l.scrollHeight);
+}
+
+var blog_api = async (uri, params) =>
+{
+	var r = api('v2/blog/' + uri, params);
+
+	requests_left--;
+
+	return r;
+}
+
+async function check_rate_limit()
+{
+	if (requests_left > 0) {
+		return;
+	}
+
+	var date = new Date;
+	// Add one hour
+	date.setUTCHours(date.getUTCHours()+1);
+	date.setMinutes(2);
+
+	var hour = date.getHours() + ':' + ('0' + date.getMinutes()).substr(-2);
+
+	var timeout = date.getTime() - Date.now();
+
+	$('#msg').style.display = 'block';
+	$('#msg').innerHTML = "Le nombre de requêtes a été dépassé, reprise du téléchargement à " + hour + ".<br/><strong>Merci de ne *PAS* fermer cette fenêtre.</strong>";
+
+	log('Zero requests left, we have to wait for ' + (timeout/1000/60) + ' minutes', false);
+
+	await new Promise(r => setTimeout(r, timeout));
+
+	$('#msg').style.display = 'none';
+}
+
+var api = async (uri, params) => {
 	var ignore_errors = true;
 	var params_str = '';
 
-	if (requests_count++) {
+	await check_rate_limit();
+
+	if (requests_count++ > 1) {
 		// Add some delay between requests
-		await new Promise(r => setTimeout(r, 250));
+		await new Promise(r => setTimeout(r, request_delay));
 	}
 
 	if (typeof params == 'object' && params !== null) {
@@ -21,14 +76,26 @@ var api = async (url, params) => {
 		})
 	}
 
-	url = 'https://api.skyrock.com/' + url + '.json?' + params_str;
+	params_str = params_str.replace(/&$/, '');
+
+	url = 'https://api.skyrock.com/' + uri + '.json?' + params_str;
 
 	if (api_proxy) {
 		url = url.replace(/https:\/\//, api_proxy);
 	}
 
-	console.log('Requesting', url);
 	var r = await fetch(url);
+
+	if (!r.ok) {
+		log('…/' + uri + '?' + params_str, r.status);
+	}
+	else {
+		log('…/' + uri + '?' + params_str, true);
+	}
+
+	if (r.status >= 400 && r.status < 500) {
+		request_delay += 250;
+	}
 
 	if (r.status == 429 || r.status == 403) {
 		if (ignore_errors) {
@@ -52,8 +119,14 @@ var req = async (url) => {
 		url = url.replace(/https:\/\//, api_proxy);
 	}
 
-	var r = await fetch(url);
-	return await r.text();
+	try {
+		var r = await fetch(url);
+		log(url, true);
+		return await r.text();
+	}
+	catch (e) {
+		log(url, false);
+	}
 };
 
 var reqBlob = async (url) => {
@@ -96,13 +169,25 @@ var zip = new JSZip();
 
 async function archive(username, options)
 {
-	try {
-		var blog = await api('v2/blog/get', {username});
+	var limit;
 
-		if (null === blog) {
-			alert("Vous avez dépassé les limites de requêtes de l'API Skyrock.com, merci d'attendre une heure avant de recommencer.");
-			return;
-		}
+	try {
+		limit = await api('v2/check_rate_limit');
+	}
+	catch (e) {
+		limit = null;
+	}
+
+	if (null === limit) {
+		alert("Vous avez dépassé les limites de requêtes de l'API Skyrock.com, merci d'attendre une heure avant de recommencer.");
+		return;
+	}
+
+	requests_left = limit.ip;
+	log('<b>' + requests_left + " requests left for this IP</b>", true);
+
+	try {
+		var blog = await blog_api('get', {username});
 	}
 	catch (e) {
 		alert('Blog introuvable' + "\n" + e);
@@ -117,18 +202,26 @@ async function archive(username, options)
 	var last_page = Math.ceil(blog.nb_posts / 10);
 	var all_requests_count = 1 + last_page * 2 + blog.nb_posts;
 
-	if (all_requests_count > 450 && options.bbcode) {
+	if (all_requests_count > requests_left && options.bbcode && (all_requests_count - last_page) <= requests_left) {
 		options.bbcode = false;
 		all_requests_count -= last_page;
 	}
 
-	if (all_requests_count > 475 && (options.images || options.comments)) {
-		if (!confirm("Ce blog a trop d'articles, il ne sera pas possible de télécharger les images et commentaires.\nTélécharger le blog sans les images ni les commentaires ?")) {
-			return;
+	if (all_requests_count > requests_left) {
+		var count = all_requests_count - requests_left;
+
+		var hours = Math.ceil(count / 500);
+		var msg = "Ce blog a beaucoup d'articles. Il faudra attendre " + hours + " heures pour tout télécharger !\n"
+
+		if (options.images) {
+			msg += "(Note : désactiver les images et commentaires pourrait accélérer.)\n";
 		}
 
-		options.images = false;
-		options.comments = false;
+		msg += "Continuer quand même ?";
+
+		if (!confirm(msg)) {
+			return;
+		}
 	}
 
 	var images = [];
@@ -182,7 +275,15 @@ async function archive(username, options)
 
 	zip.file('css/common.css', await req('https://static.skyrock.net/css/common.css'));
 	zip.file('css/tpl.css', await req('https://static.skyrock.net/css/blogs/tpl.css'));
-	zip.file('css/theme.css', await req('https://static.skyrock.net/css/blogs/' + blog.id_skin + '.css'));
+
+	var id_skin = blog.id_skin;
+
+	// 240-241-242 = skin perso
+	if (id_skin >= 240 && id_skin <= 242) {
+		id_skin = 32;
+	}
+
+	zip.file('css/theme.css', await req('https://static.skyrock.net/css/blogs/' + id_skin + '.css'));
 
 	zip.file('json/blog.json', JSON.stringify(blog, null, "\t"));
 
@@ -196,14 +297,14 @@ async function archive(username, options)
 	}
 
 	for (var p = 1; p <= last_page; p++) {
-		var posts_html = await api('v2/blog/list_posts', {username, 'page': p});
+		var posts_html = await blog_api('list_posts', {username, 'page': p});
 
 		if (posts_html === null) {
 			alert('Vous avez dépassé le nombre de requêtes autorisées. Le blog sera incomplet.');
 			break;
 		}
 
-		var posts_bbcode = options.bbcode ? await api('v2/blog/list_posts', {username, 'page': p, 'output_format': 'bbcode'}): null;
+		var posts_bbcode = options.bbcode ? await blog_api('list_posts', {username, 'page': p, 'output_format': 'bbcode'}): null;
 
 		// Reverse order
 		posts_html = arrayReverseObj(posts_html.posts);
@@ -218,7 +319,7 @@ async function archive(username, options)
 			post.image = null;
 
 			if (options.images) {
-				post.medias = await api('v2/blog/list_post_medias', {username, 'id_post': id_post}) || [];
+				post.medias = await blog_api('list_post_medias', {username, 'id_post': id_post}) || [];
 			}
 
 			var align = post.media_align.match(/left|right|center/)[0] ?? 'center';
@@ -283,7 +384,7 @@ async function archive(username, options)
 							<div>`;
 
 				for (var cp = 1; cp <= last_comment_page; cp++) {
-					var post_comments = await api('v2/blog/list_post_comments', {username, 'id_post': id_post, 'page': cp});
+					var post_comments = await blog_api('list_post_comments', {username, 'id_post': id_post, 'page': cp});
 
 					if (null === post_comments) {
 						break;

@@ -169,6 +169,14 @@ var zip = new JSZip();
 
 async function archive(username, options)
 {
+	$('#progress').style.display = 'block';
+	$('form').style.display = 'none';
+
+	var quit = () => {
+		$('#progress').style.display = 'none';
+		$('form').style.display = 'block';
+	};
+
 	var limit;
 
 	try {
@@ -180,6 +188,7 @@ async function archive(username, options)
 
 	if (null === limit) {
 		alert("Vous avez dépassé les limites de requêtes de l'API Skyrock.com, merci d'attendre une heure avant de recommencer.");
+		quit();
 		return;
 	}
 
@@ -191,11 +200,13 @@ async function archive(username, options)
 	}
 	catch (e) {
 		alert('Blog introuvable' + "\n" + e);
+		quit();
 		return;
 	}
 
 	if (!blog.nb_posts) {
 		alert('Ce blog n\'a aucun article.');
+		quit();
 		return;
 	}
 
@@ -220,6 +231,7 @@ async function archive(username, options)
 		msg += "Continuer quand même ?";
 
 		if (!confirm(msg)) {
+			quit();
 			return;
 		}
 	}
@@ -287,8 +299,6 @@ async function archive(username, options)
 
 	zip.file('json/blog.json', JSON.stringify(blog, null, "\t"));
 
-	$('#progress').style.display = 'block';
-	$('form').style.display = 'none';
 	$('#posts').max = blog.nb_posts;
 	$('#posts').value = 0;
 

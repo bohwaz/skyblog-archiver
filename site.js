@@ -2,7 +2,8 @@
 const image_proxy = 'https://skyproxy.bohwaz.net/';
 const api_proxy = null;
 var request_delay = 250;
-var requests_left = 500;
+const requests_limit = 500;
+var requests_left = requests_limit;
 
 var requests_count = 0;
 
@@ -55,6 +56,8 @@ async function check_rate_limit()
 	log('Zero requests left, we have to wait for ' + (timeout/1000/60) + ' minutes', false);
 
 	await new Promise(r => setTimeout(r, timeout));
+
+	requests_left = requests_limit - 5;
 
 	$('#msg').style.display = 'none';
 }
@@ -195,6 +198,9 @@ async function archive(username, options)
 	requests_left = limit.ip;
 	log('<b>' + requests_left + " requests left for this IP</b>", true);
 
+	// Make sure we keep some requests, just in case
+	requests_left -= 5;
+
 	try {
 		var blog = await blog_api('get', {username});
 	}
@@ -221,7 +227,7 @@ async function archive(username, options)
 	if (all_requests_count > requests_left) {
 		var count = all_requests_count - requests_left;
 
-		var hours = Math.ceil(count / 500);
+		var hours = Math.ceil(count / (requests_limit - 5));
 		var msg = "Ce blog a beaucoup d'articles. Il faudra attendre " + hours + " heures pour tout télécharger !\n"
 
 		if (options.images) {

@@ -330,13 +330,8 @@ async function archive(username, options)
 
 		// Sort posts by date
 		posts_html = Object.values(posts_html.posts);
-		posts_html.sort((a, b) => {
-			if (a.created_at == b.created_at) {
-				return 0;
-			}
-
-			return a.created_at > b.created_at ? 1 : -1;
-		});
+		posts_html.sort();
+		posts_html.reverse();
 
 		for (var k in posts_html) {
 			var post = posts_html[k];

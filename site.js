@@ -335,7 +335,7 @@ async function archive(username, options)
 				return 0;
 			}
 
-			return a.created_at > b.created_at ? 1 : -1;
+			return a.created_at > b.created_at ? -1 : 1;
 		});
 
 		for (var k in posts_html) {

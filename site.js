@@ -87,7 +87,16 @@ var api = async (uri, params) => {
 		url = url.replace(/https:\/\//, api_proxy);
 	}
 
-	var r = await fetch(url);
+	try {
+		var r = await fetch(url);
+	}
+	catch (e) {
+		if (!confirm("La requête vers " + url + " a échoué, ré-essayer la requête ?\n" + e)) {
+			throw e;
+		}
+
+		return await api(uri, params);
+	}
 
 	if (!r.ok) {
 		log('…/' + uri + '?' + params_str, r.status);
@@ -164,9 +173,6 @@ function date_format(ts)
 	var d = new Date(ts*1000);
 	return d.toLocaleDateString('fr-FR', {'timezone': 'Europe/Paris'});
 }
-
-const arrayReverseObj =
-  obj => Object.keys(obj).sort().reverse().map(key=> ({...obj[key],key:key}) );
 
 var zip = new JSZip();
 
@@ -322,8 +328,15 @@ async function archive(username, options)
 
 		var posts_bbcode = options.bbcode ? await blog_api('list_posts', {username, 'page': p, 'output_format': 'bbcode'}): null;
 
-		// Reverse order
-		posts_html = arrayReverseObj(posts_html.posts);
+		// Sort posts by date
+		posts_html = Object.values(posts_html.posts);
+		posts_html.sort((a, b) => {
+			if (a.created_at == b.created_at) {
+				return 0;
+			}
+
+			return a.created_at > b.created_at ? 1 : -1;
+		});
 
 		for (var k in posts_html) {
 			var post = posts_html[k];
@@ -489,7 +502,7 @@ async function archive(username, options)
 		alert(err);
 	});
 
-	$('#progress').style.display = 'none';
+	//$('#progress').style.display = 'none';
 	$('#finished').style.display = 'block';
 }
 

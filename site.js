@@ -451,12 +451,12 @@ async function archive(username, options)
 
 						// Escape HTML
 						escape.textContent = comment.content;
-						var text = escape.innerHTML.replace(/\r?\n|\r/g, '<br/>');
+						var comment_text = escape.innerHTML.replace(/\r?\n|\r/g, '<br/>');
 
 						comments += tpl('comment', {
 							'username': comment.author.username,
 							'date': date_format(comment.date),
-							'comment': text
+							'comment': comment_text
 						});
 					}
 

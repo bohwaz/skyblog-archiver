@@ -326,6 +326,8 @@ async function archive(username, options)
 		images['avatar.png'] = blog.avatar_url;
 	}
 
+	var escape = document.createElement('textarea');
+
 	for (var p = 1; p <= last_page; p++) {
 		var posts_html = await blog_api('list_posts', {username, 'page': p});
 
@@ -446,10 +448,15 @@ async function archive(username, options)
 
 						var comment = post_comments.comments[id_comment];
 						post.comments.push(comment);
+
+						// Escape HTML
+						escape.textContent = comment.content;
+						var text = escape.innerHTML.replace(/\r?\n|\r/g, '<br/>');
+
 						comments += tpl('comment', {
 							'username': comment.author.username,
 							'date': date_format(comment.date),
-							'comment': comment.content
+							'comment': text
 						});
 					}
 

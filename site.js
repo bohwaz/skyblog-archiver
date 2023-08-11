@@ -260,6 +260,10 @@ async function archive(username, options)
 		<link rel="stylesheet" type="text/css" media="screen" href="css/common.css" />
 		<link rel="stylesheet" type="text/css" media="screen" href="css/tpl.css" />
 		<link rel="stylesheet" type="text/css" media="screen" href="css/theme.css" />
+		<style type="text/css">
+		span.comments-btn { cursor: pointer; text-decoration: underline; }
+		span.comments-btn:hover { text-decoration: none; color: darkred; }
+		</style>
 	</head>
 	<body class="v5 l_fr_FR consult sidebar_two content_slim submenu_container" id="blog">
 	<div id="global" class="skyrock">
@@ -335,7 +339,14 @@ async function archive(username, options)
 				return 0;
 			}
 
-			return a.created_at > b.created_at ? 1 : -1;
+			// Ordre chronologique, du plus ancien au plus récent
+			if (blog.posts_order == 'chronological') {
+				return a.created_at > b.created_at ? 1 : -1;
+			}
+			// Ordre anté-chronologique, du plus récent au plus ancien
+			else {
+				return a.created_at > b.created_at ? -1 : 1;
+			}
 		});
 
 		for (var k in posts_html) {
@@ -402,15 +413,18 @@ async function archive(username, options)
 			if (options.comments && post.nb_comments && blog.comments_enabled) {
 				var last_comment_page = 1;
 
+				var comments_label = post.nb_comments == 1 ? '1 commentaire' : post.nb_comments + ' commentaires';
+
 				comments += `
 					<div class="article_content_menu clearfix donot-getstyle">
 						<ul>
-							<li><span class="title_tooltip">Commentaires<span class="pointe_border"></span></span></li>
+							<li><span class="title_tooltip comments-btn" onclick="document.getElementById('comments_${id_post}').style.display = 'block'; this.classList.remove('comments-btn');" title="Cliquer pour afficher les commentaires">${comments_label}<span class="pointe_border"></span></span></li>
 						</ul>
 					</div>
-					<div id="secondary_content" class="clear_bloc clearfix">
-						<div id="blogcomments">
-							<div>`;
+					<div id="comments_${id_post}" style="display: none">
+						<div id="secondary_content" class="clear_bloc clearfix">
+							<div id="blogcomments">
+								<div>`;
 
 				for (var cp = 1; cp <= last_comment_page; cp++) {
 					var post_comments = await blog_api('list_post_comments', {username, 'id_post': id_post, 'page': cp});
@@ -438,6 +452,7 @@ async function archive(username, options)
 				}
 
 				comments += `
+							</div>
 						</div>
 					</div>
 				</div>`;

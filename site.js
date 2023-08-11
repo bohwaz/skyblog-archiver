@@ -4,6 +4,7 @@ const api_proxy = null;
 var request_delay = 250;
 const requests_limit = 500;
 var requests_left = requests_limit;
+var stop_after_first_page = false;
 
 var requests_count = 0;
 
@@ -261,8 +262,11 @@ async function archive(username, options)
 		<link rel="stylesheet" type="text/css" media="screen" href="css/tpl.css" />
 		<link rel="stylesheet" type="text/css" media="screen" href="css/theme.css" />
 		<style type="text/css">
-		span.comments-btn { cursor: pointer; text-decoration: underline; }
-		span.comments-btn:hover { text-decoration: none; color: darkred; }
+		details > summary { list-style: none; }
+		span.comments-btn { cursor: pointer; text-decoration: underline; transition: color .25s, background-color .25s; }
+		span.comments-btn .pointe_border { transition: border-color .25s; border-width: 10px 10px 0 !important; bottom: -10px !important; left: 30px !important; }
+		span.comments-btn:hover { color: #fff !important; background: darkred !important; }
+		span.comments-btn:hover .pointe_border { border-top-color: darkred !important; }
 		</style>
 	</head>
 	<body class="v5 l_fr_FR consult sidebar_two content_slim submenu_container" id="blog">
@@ -416,15 +420,15 @@ async function archive(username, options)
 				var comments_label = post.nb_comments == 1 ? '1 commentaire' : post.nb_comments + ' commentaires';
 
 				comments += `
-					<div class="article_content_menu clearfix donot-getstyle">
+				<details id="comments_${id_post}">
+					<summary class="article_content_menu clearfix donot-getstyle">
 						<ul>
-							<li><span class="title_tooltip comments-btn" onclick="document.getElementById('comments_${id_post}').style.display = 'block'; this.classList.remove('comments-btn');" title="Cliquer pour afficher les commentaires">${comments_label}<span class="pointe_border"></span></span></li>
+							<li><span class="title_tooltip comments-btn" title="Cliquer pour afficher les commentaires">${comments_label}<span class="pointe_border"></span></span></li>
 						</ul>
-					</div>
-					<div id="comments_${id_post}" style="display: none">
-						<div id="secondary_content" class="clear_bloc clearfix">
-							<div id="blogcomments">
-								<div>`;
+					</summary>
+					<div id="secondary_content" class="clear_bloc clearfix">
+						<div id="blogcomments">
+							<div>`;
 
 				for (var cp = 1; cp <= last_comment_page; cp++) {
 					var post_comments = await blog_api('list_post_comments', {username, 'id_post': id_post, 'page': cp});
@@ -452,7 +456,6 @@ async function archive(username, options)
 				}
 
 				comments += `
-							</div>
 						</div>
 					</div>
 				</div>`;
@@ -472,6 +475,10 @@ async function archive(username, options)
 			posts.push(post);
 			zip.file('json/post_' + id_post + '.json', JSON.stringify(post, null, "\t"));
 			$('#posts').value++;
+		}
+
+		if (stop_after_first_page) {
+			break;
 		}
 	}
 

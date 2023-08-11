@@ -12,6 +12,8 @@ Les données suivantes sont archivées :
 
 Un fichier ZIP est généré dans le navigateur.
 
+La gestion des blogs trop gros est faite en attendant une heure pour attendre que les limitations de l'API soient annulées.
+
 ## Limitations de l'API
 
 * Il faut faire 2 requêtes pour avoir à la fois le contenu en HTML et en BBCode :-(

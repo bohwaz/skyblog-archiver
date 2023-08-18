@@ -64,7 +64,7 @@ async function check_rate_limit()
 }
 
 var api = async (uri, params) => {
-	var ignore_errors = true;
+	var ignore_errors = false;
 	var params_str = '';
 
 	await check_rate_limit();
@@ -105,6 +105,13 @@ var api = async (uri, params) => {
 	else {
 		log('…/' + uri + '?' + params_str, true);
 	}
+
+	if (r.status == 403 && uri == 'v2/blog/get') {
+		var j = await r.json();
+
+		throw j.error || r.statusText;
+	}
+
 
 	if (r.status >= 400 && r.status < 500) {
 		request_delay += 250;
@@ -212,7 +219,16 @@ async function archive(username, options)
 		var blog = await blog_api('get', {username});
 	}
 	catch (e) {
-		alert('Blog introuvable' + "\n" + e);
+		if (e == 'This blog is not public.') {
+			alert("Ce blog n\'est pas public\nPour pouvoir le télécharger, mettez-le en accès public.");
+		}
+		else if (e == 'Unknown user.') {
+			alert("Impossible de trouver un blog avec ce pseudo\nVérifiez le pseudo.");
+		}
+		else {
+			alert("Erreur :\n" + e);
+		}
+
 		quit();
 		return;
 	}
